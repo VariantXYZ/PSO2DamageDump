@@ -1,5 +1,4 @@
 #include <windows.h>
-//#include <shlobj.h>
 #include <locale>
 #include <ctime>
 #include <fstream>
@@ -8,7 +7,7 @@
 #include <queue>
 #include <unordered_map>
 
-#include "External\packet.h"
+#include "..\PSO2HBinaries\packet.h"
 #include "packetdef.h"
 #include "utility.h"
 

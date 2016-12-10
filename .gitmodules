@@ -1,0 +1,3 @@
+[submodule "PSO2HBinaries"]
+	path = PSO2HBinaries
+	url = https://github.com/VariantXYZ/PSO2HBinaries.git
