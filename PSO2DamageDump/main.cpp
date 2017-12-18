@@ -3,6 +3,7 @@
 #include <ctime>
 #include <fstream>
 #include <codecvt>
+#include <Shlwapi.h>
 
 #include <queue>
 #include <unordered_map>
@@ -12,6 +13,7 @@
 #include "utility.h"
 
 #define OUTPUT_DIR "damagelogs"
+#define OUTPUT_DELAY 1000
 
 #define MSG_COMBAT_ACTION WM_USER+1
 #define MSG_NEW_NAME WM_USER+2
@@ -46,6 +48,8 @@ namespace PSO2DamageDump
 
 	std::wofstream output;
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+	static volatile DWORD outputDelay = OUTPUT_DELAY;
 
 	enum DamageFlags
 	{
@@ -86,14 +90,32 @@ namespace PSO2DamageDump
 		time_t ts = time(NULL);
 		char docspath[MAX_PATH];
 		char filename[MAX_PATH];
+		char delay[10 + 1];
+		size_t length;
 
 		UNREFERENCED_PARAMETER(param);
 
-		size_t length = PSO2Hook::pso2hGetConfig("directory", NULL, 0);
-		if (length && length < MAX_PATH)
-			PSO2Hook::pso2hGetConfig("directory", docspath, MAX_PATH);
+		length = PSO2Hook::pso2hGetConfig("directory", NULL, 0);
+		if (length && length < sizeof(docspath))
+			PSO2Hook::pso2hGetConfig("directory", docspath, sizeof(docspath));
 		else
 			sprintf_s(docspath, "./%s", OUTPUT_DIR);
+
+		length = PSO2Hook::pso2hGetConfig("delay", NULL, 0);
+		if (length && length < sizeof(delay)) //0 to 4294967295
+		{
+			PSO2Hook::pso2hGetConfig("delay", delay, sizeof(delay));
+			int ret = StrToInt(delay);
+			if (ret > 0)
+			{
+				outputDelay = ret;
+				PSO2Hook::pso2hLogLine("Output delay set to %i", ret);
+			}
+			else
+			{
+				PSO2Hook::pso2hLogLine("Output delay must be greater than or equal to 0 (currently %i)", ret);
+			}
+		}
 
 		CreateDirectoryA(docspath, NULL);
 		sprintf_s(filename, "%s/%lli.csv", docspath, ts);
@@ -195,7 +217,7 @@ namespace PSO2DamageDump
 			MSG msg;
 			if (!PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 			{
-				Sleep(1000);
+				Sleep(outputDelay);
 				continue;
 			}
 
